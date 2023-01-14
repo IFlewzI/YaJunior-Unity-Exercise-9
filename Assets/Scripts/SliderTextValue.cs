@@ -11,9 +11,10 @@ public class SliderTextValue : MonoBehaviour
     {
         _parentSlider = GetComponentInParent<Slider>();
         _text = GetComponent<Text>();
+        TextUpdate();
     }
 
-    private void Update()
+    public void TextUpdate()
     {
         _text.text = _parentSlider.value.ToString();
     }

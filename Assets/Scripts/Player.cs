@@ -1,19 +1,19 @@
 using UnityEngine;
-using UnityEngine.Events;
+using UnityEngine.UI;
 using DG.Tweening;
 
 [RequireComponent(typeof(SpriteRenderer))]
 public class Player : MonoBehaviour
 {
+    [SerializeField] private Slider _hpBar;
     [SerializeField] private Color _colorAfterDamaged;
     [SerializeField] private Color _colorAfterHealed;
     [SerializeField] private float _colorEffectTime;
-    [SerializeField] private UnityEvent<float> _hpChanged;
 
     private SpriteRenderer _spriteRenderer;
-    [SerializeField] private Color _defaultColor;
+    private Color _defaultColor;
     private DG.Tweening.Core.TweenerCore<Color, Color, DG.Tweening.Plugins.Options.ColorOptions> _colorChangeTweener;
-    private float _hp;
+    [SerializeField] private float _hp;
     private float _maxHp;
     private float _minHp;
 
@@ -24,35 +24,40 @@ public class Player : MonoBehaviour
         _hp = 50;
         _maxHp = 100;
         _minHp = 0;
-        _hpChanged.Invoke(_hp);
+        _hpBar.value = _hp;
+        _hpBar.maxValue = _maxHp;
+        _hpBar.minValue = _minHp;
     }
 
-    public void GetHpChanges(float changeValue)
+    public void GetDamage(float damage)
     {
-        Color targetColor;
+        if (Mathf.Clamp(_hp - damage, _minHp, _maxHp) < _hp)
+            CreateEffectAfterDamage();
+
+        _hp = Mathf.Clamp(_hp - damage, _minHp, _maxHp);
+        _hpBar.gameObject.GetComponent<Bar>().SmoothlyChangeValue(_hp);
+    }
+
+    public void GetHeal(float healValue)
+    {
+        if (Mathf.Clamp(_hp + healValue, _minHp, _maxHp) > _hp)
+            CreateEffectAfterHeal();
+
+        _hp = Mathf.Clamp(_hp + healValue, _minHp, _maxHp);
+        _hpBar.gameObject.GetComponent<Bar>().SmoothlyChangeValue(_hp);
+    }
+
+    private void CreateEffectAfterDamage()
+    {
         _colorChangeTweener.Pause();
+        _spriteRenderer.color = _defaultColor;
+        _colorChangeTweener = _spriteRenderer.DOColor(_colorAfterDamaged, _colorEffectTime / 2).SetLoops(2, LoopType.Yoyo);
+    }
 
-        if (_hp + changeValue > _maxHp)
-        {
-            _hp = _maxHp;
-        }
-        else if (_hp + changeValue < _minHp)
-        {
-            _hp = _minHp;
-        }
-        else
-        {
-            _hp += changeValue;
-
-            if (_hp + changeValue > _hp)
-                targetColor = _colorAfterHealed;
-            else
-                targetColor = _colorAfterDamaged;
-
-            _spriteRenderer.color = _defaultColor;
-            _colorChangeTweener = _spriteRenderer.DOColor(targetColor, _colorEffectTime / 2).SetLoops(2, LoopType.Yoyo);
-        }
-
-        _hpChanged.Invoke(_hp);
+    private void CreateEffectAfterHeal()
+    {
+        _colorChangeTweener.Pause();
+        _spriteRenderer.color = _defaultColor;
+        _colorChangeTweener = _spriteRenderer.DOColor(_colorAfterHealed, _colorEffectTime / 2).SetLoops(2, LoopType.Yoyo);
     }
 }
